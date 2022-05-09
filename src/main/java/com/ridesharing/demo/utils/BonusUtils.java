@@ -2,15 +2,10 @@ package com.ridesharing.demo.utils;
 
 import com.ridesharing.demo.database.RidesManager;
 import com.ridesharing.demo.model.Ride;
-import com.ridesharing.demo.requests.RideRequestDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -19,15 +14,13 @@ public class BonusUtils {
     @Autowired
     private RidesManager ridesManager;
 
-    HashMap<String,ArrayList<String>> map = new HashMap<>();
+    HashMap<String,ArrayList<String>>map = new HashMap<>();
     HashMap<String, Integer> cityLinks = new HashMap<>();
-    HashMap<Integer, String> numberedLinks = new HashMap<>();
 
 
     private void addEdge(String src, String destination)
     {
         map.get(src).add(destination);
-        map.get(destination).add(src);
     }
 
     public Boolean isCitiesAlreadyLinked(String src, String dest){
@@ -40,80 +33,115 @@ public class BonusUtils {
         return false;
     }
 
-    // TBD - wip
-    public List<String> bonusCase(RideRequestDto rideRequestDto){
-        List<Ride>presentRides = ridesManager.getAllRidesListWithAvailableSeats(rideRequestDto.getSeats());
-        for(Ride ride : presentRides){
-            if(!isCitiesAlreadyLinked(ride.getSourceLocation(),ride.getDestinationLocation())){
-                addEdge(ride.getSourceLocation(), ride.getDestinationLocation());
-            }
+    public void createMap(int minSeats){
+        List<Ride>listOfValidRides = ridesManager.getAllRidesListWithAvailableSeats(minSeats);
+        for(Ride listOfValidRide : listOfValidRides){
+            map.put(listOfValidRide.getSourceLocation(), new ArrayList<>());
+            map.put(listOfValidRide.getDestinationLocation(), new ArrayList<>());
         }
-        Integer count = 0;
-        for (var entry : map.entrySet()) {
-            cityLinks.put(entry.getKey(),count);
-            numberedLinks.put(count,entry.getKey());
-            count++;
+        ArrayList<String>listOfUniqueCities = uniqueCities(listOfValidRides);
+        for(int i=0;i<listOfUniqueCities.size();i++){
+            cityLinks.put(listOfUniqueCities.get(i),i);
         }
-        int totalVertex = map.size();
-        Integer[] pred = new Integer[totalVertex];
-        Integer[] dist = new Integer[totalVertex];
-
-        if (BFS(rideRequestDto.getSourceLocation(), rideRequestDto.getDestinationLocation(), totalVertex, pred, dist)) {
-            log.debug("Given source and destination are not connected");
-            return null;
+        for (Ride listOfValidRide : listOfValidRides) {
+            addEdge(listOfValidRide.getSourceLocation(), listOfValidRide.getDestinationLocation());
         }
-
-        LinkedList<Integer> path = new LinkedList<Integer>();
-        Integer crawl = cityLinks.get(rideRequestDto.getDestinationLocation());
-        path.add(crawl);
-        while (pred[crawl] != -1) {
-            path.add(pred[crawl]);
-            crawl = pred[crawl];
-        }
-
-        System.out.println("Shortest path length is: " + dist[cityLinks.get(rideRequestDto.getDestinationLocation())]);
-
-        System.out.println("Path is ::");
-        for (int i = path.size() - 1; i >= 0; i--) {
-            System.out.print(numberedLinks.get(path.get(i)) + " ");
-        }
-
-        return null;
     }
 
-    public Boolean BFS(String src, String dest, Integer totalVertex, Integer[] pred, Integer[] dist){
-        LinkedList<Integer> queue = new LinkedList<Integer>();
-        boolean[] visited = new boolean[totalVertex];
+    public ArrayList<String> uniqueCities(List<Ride>listOfValidRides){
+        ArrayList<String>uniqueList = new ArrayList<>();
+        for (Ride listOfValidRide : listOfValidRides) {
+            if (isUniqueCity(listOfValidRide.getSourceLocation(), uniqueList)) {
+                uniqueList.add(listOfValidRide.getSourceLocation());
+            }
+            if (isUniqueCity(listOfValidRide.getDestinationLocation(), uniqueList)) {
+                uniqueList.add(listOfValidRide.getDestinationLocation());
+            }
+        }
+        return uniqueList;
+    }
 
-        for (int i = 0; i < totalVertex; i++) {
-            visited[i] = false;
-            dist[i] = Integer.MAX_VALUE;
-            pred[i] = -1;
+    public boolean isUniqueCity(String city, ArrayList<String>arr){
+        for (String s : arr) {
+            if (Objects.equals(s, city)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void printArrayList(ArrayList<String>arr){
+        for(String s: arr){
+            System.out.println(s);
+        }
+    }
+
+    public boolean BFS(String source, String destination, String pred[]){
+        LinkedList<String>queue = new LinkedList<>();
+
+        HashMap<String, Integer>vis = new HashMap<>();
+
+        for(var entry : map.entrySet()){
+            vis.put(entry.getKey(),0);
         }
 
-        visited[cityLinks.get(src)] = true;
-        dist[cityLinks.get(src)] = 0;
-        queue.add(cityLinks.get(src));
+        for(int i=0;i<map.size();i++){
+            pred[i] = "";
+        }
+        queue.add(source);
 
-        while (!queue.isEmpty()) {
-            int u = queue.remove();
-            for (int i = 0; i < map.get(numberedLinks.get(u)).size(); i++) {
-                if (!visited[cityLinks.get(map.get(numberedLinks.get(u)).get(i))]) {
-                    visited[cityLinks.get(map.get(numberedLinks.get(u)).get(i))] = true;
-                    dist[cityLinks.get(map.get(numberedLinks.get(u)).get(i))] = dist[u] + 1;
-                    pred[cityLinks.get(map.get(numberedLinks.get(u)).get(i))] = u;
-                    queue.add(cityLinks.get(map.get(numberedLinks.get(u)).get(i)));
-
-                    if (cityLinks.get(map.get(numberedLinks.get(u)).get(i)).equals(cityLinks.get(dest)))
+        while(!queue.isEmpty()){
+            String front = queue.remove();
+            ArrayList<String>tmp = map.get(front);
+            for (String s : tmp) {
+                if (vis.get(s) == 0) {
+                    vis.put(s, 1);
+                    queue.add(s);
+                    pred[cityLinks.get(s)] = front;
+                    if (Objects.equals(s, destination)) {
                         return true;
+                    }
                 }
             }
         }
+
         return false;
     }
 
-    // TBD - wip
-    public List<Ride> aggregateRides(List<String>path, Integer seats){
-        return null;
+    public ArrayList<Ride> getRoute(String source, String destination, int minSeats){
+        createMap(minSeats);
+        String pred[] = new String[map.size()];
+
+        if(!BFS(source, destination, pred)){
+            log.error("no disconnected route present b/w source and destination");
+            return null;
+        }
+        ArrayList<String>path = new ArrayList<>();
+        path.add(destination);
+        String crawl = destination;
+        while(!Objects.equals(pred[cityLinks.get(crawl)], "")){
+            path.add(pred[cityLinks.get(crawl)]);
+            crawl = pred[cityLinks.get(crawl)];
+        }
+//        System.out.println("=========== printing path =============");
+//        printArrayList(path);
+        ArrayList<Ride>listOfAllRides = ridesManager.getAllRidesList();
+        ArrayList<Ride>rides = new ArrayList<>();
+        for(int i=path.size()-1;i>0;i--){
+            String src = path.get(i);
+            String dest = path.get(i-1);
+            System.out.println("src:: "+src + " dest: "+dest);
+            for(Ride ride : listOfAllRides){
+                if(Objects.equals(ride.getSourceLocation(), src) &&
+                        Objects.equals(ride.getDestinationLocation(), dest) &&
+                            ride.getAvailableSeats() >= minSeats){
+                    rides.add(ride);
+                    break;
+                }
+            }
+        }
+        System.out.println("Size of Disconnected rides: "+rides.size());
+        return rides;
     }
+
 }

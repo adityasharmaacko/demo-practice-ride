@@ -13,8 +13,8 @@ import com.ridesharing.demo.requests.RideRequestDto;
 import com.ridesharing.demo.responses.UserRideStatusResponse;
 import com.ridesharing.demo.utils.BonusUtils;
 import com.ridesharing.demo.utils.GeneralUtils;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -22,22 +22,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class RideService {
 
-    @Autowired
-    private RidesManager ridesManager;
+    private final RidesManager ridesManager;
 
-    @Autowired
-    private UsersManager usersManager;
+    private final UsersManager usersManager;
 
-    @Autowired
-    private VehiclesManager vehiclesManager;
+    private final VehiclesManager vehiclesManager;
 
-    @Autowired
-    private GeneralUtils generalUtils;
+    private final GeneralUtils generalUtils;
 
-    @Autowired
-    private BonusUtils bonusUtils;
+    private final BonusUtils bonusUtils;
 
     public void createRide(OfferingRequestDto offeringRequestDto){
         if(!generalUtils.isUserExists(offeringRequestDto.getUserName())){
@@ -70,7 +66,10 @@ public class RideService {
             log.error("user not exists in database");
             throw new EntityNotFoundException("user not exists in database");
         }
-        Ride validRide = null;
+        if(rideRequestDto.getSeats() > 2 || rideRequestDto.getSeats() < 1){
+            log.error("Seats request should lie in range [1,2]");
+        }
+        ArrayList<Ride>validRide = new ArrayList<>();
         List<Ride>listOfValidRides = ridesManager.getRides(rideRequestDto.getSourceLocation(),
                 rideRequestDto.getDestinationLocation(),
                 rideRequestDto.getSeats());
@@ -79,30 +78,29 @@ public class RideService {
             for(Ride ride : listOfValidRides){
                 if(ride.getAvailableSeats() > maxAvailability.get()){
                     maxAvailability.set(Math.max(maxAvailability.get(), ride.getAvailableSeats()));
-                    validRide = ride;
+                    validRide.add(0,ride);
                 }
             }
         }
         else{
             for(Ride ride : listOfValidRides){
                 if(ride.getVehicleType().equalsIgnoreCase(rideRequestDto.getPreferredVehicle())){
-                    validRide = ride;
+                    validRide.add(0,ride);
                 }
             }
         }
-//        Bonus - Case
-//        List<String>pathExists = bonusUtils.bonusCase(rideRequestDto);
-//        if(pathExists.size()>0){
-//            return(bonusUtils.aggregateRides(pathExists,rideRequestDto.getSeats()));
-//        }
+        if(validRide.size() == 0){
+            validRide = bonusUtils.getRoute(rideRequestDto.getSourceLocation(),rideRequestDto.getDestinationLocation(),rideRequestDto.getSeats());
+        }
 
-        if(validRide == null){
+        if(validRide.size() == 0){
             log.error("No direct ride present for this request");
             throw new GenericMessageException("No direct ride present for this request");
         }
+        // update offered and taken count
         ridesManager.updateAvailableSeats(validRide,rideRequestDto.getSeats());
         usersManager.updateTakenCount(rideRequestDto.getUserName());
-        return Collections.singletonList(validRide);
+        return validRide;
     }
 
     public List<Ride> getAllRides(){

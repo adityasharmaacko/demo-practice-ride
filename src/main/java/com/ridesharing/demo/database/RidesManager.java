@@ -50,8 +50,8 @@ public class RidesManager {
         offeredRides.get(newRide.getUserName()).add(newRide);;
     }
 
-    public List<Ride> getAllRidesList(){
-        List<Ride>allRides = new ArrayList<>();
+    public ArrayList<Ride> getAllRidesList(){
+        ArrayList<Ride>allRides = new ArrayList<>();
         for (var entry : offeredRides.entrySet()) {
             allRides.addAll(entry.getValue());
         }
@@ -85,17 +85,19 @@ public class RidesManager {
     }
 
     @SneakyThrows
-    public void updateAvailableSeats(Ride validRide, Integer bookedSeats){
-        List<Ride>ridesOfferedByThisUser = offeredRides.get(validRide.getUserName());
-        for(Ride ride : ridesOfferedByThisUser){
-            if(ride.getRegistrationNumber().equals(validRide.getRegistrationNumber())){
-                log.info("updating available seats of ride: {}",objectMapper.writeValueAsString(validRide));
-                Integer currentAvailableSeats = ride.getAvailableSeats();
-                if(currentAvailableSeats<bookedSeats){
-                    log.error("ride available but seats are limited");
-                    throw new GenericMessageException("ride available but seats are limited");
+    public void updateAvailableSeats(ArrayList<Ride> validRide, Integer bookedSeats){
+        for(Ride valid : validRide){
+            List<Ride>ridesOfferedByThisUser = offeredRides.get(valid.getUserName());
+            for(Ride ride : ridesOfferedByThisUser){
+                if(ride.getRegistrationNumber().equals(valid.getRegistrationNumber())){
+                    log.info("updating available seats of ride: {}",objectMapper.writeValueAsString(validRide));
+                    Integer currentAvailableSeats = ride.getAvailableSeats();
+                    if(currentAvailableSeats<bookedSeats){
+                        log.error("ride available but seats are limited");
+                        throw new GenericMessageException("ride available but seats are limited");
+                    }
+                    ride.setAvailableSeats(currentAvailableSeats-bookedSeats);
                 }
-                ride.setAvailableSeats(currentAvailableSeats-bookedSeats);
             }
         }
     }
