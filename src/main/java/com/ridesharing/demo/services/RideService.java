@@ -2,7 +2,6 @@ package com.ridesharing.demo.services;
 
 import com.ridesharing.demo.database.RidesManager;
 import com.ridesharing.demo.database.UsersManager;
-import com.ridesharing.demo.database.VehiclesManager;
 import com.ridesharing.demo.enums.TripStatus;
 import com.ridesharing.demo.exceptions.EntityNotFoundException;
 import com.ridesharing.demo.exceptions.GenericMessageException;
@@ -29,12 +28,14 @@ public class RideService {
 
     private final UsersManager usersManager;
 
-    private final VehiclesManager vehiclesManager;
-
     private final GeneralUtils generalUtils;
 
     private final BonusUtils bonusUtils;
 
+    /**
+     * offering a ride
+     * @param offeringRequestDto
+     */
     public void createRide(OfferingRequestDto offeringRequestDto){
         if(!generalUtils.isUserExists(offeringRequestDto.getUserName())){
             log.error("user not exists in database");
@@ -61,6 +62,11 @@ public class RideService {
         ridesManager.createRide(ride);
     }
 
+    /**
+     * book a ride with user preference
+     * @param rideRequestDto
+     * @return
+     */
     public List<Ride> createBooking(RideRequestDto rideRequestDto){
         if(!generalUtils.isUserExists(rideRequestDto.getUserName())){
             log.error("user not exists in database");
@@ -103,14 +109,27 @@ public class RideService {
         return validRide;
     }
 
+    /**
+     * get list of all available rides
+     * @return
+     */
     public List<Ride> getAllRides(){
         return ridesManager.getAllRidesList();
     }
 
+    /**
+     * end the status of a ride
+     * @param userName
+     * @param registrationNumber
+     */
     public void endRideStatus(String userName, String registrationNumber){
         ridesManager.endRide(userName,registrationNumber);
     }
 
+    /**
+     * get offered/taken ride status of all users
+     * @return
+     */
     public List<UserRideStatusResponse> getAllUserRidesStatus(){
         List<User>getAllUsers = usersManager.getAllUsers();
         List<UserRideStatusResponse> userRideStatusResponses = new ArrayList<>();

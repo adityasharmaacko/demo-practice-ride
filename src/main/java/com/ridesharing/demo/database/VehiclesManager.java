@@ -1,7 +1,6 @@
 package com.ridesharing.demo.database;
 
 import com.ridesharing.demo.exceptions.EntityAlreadyPresentException;
-import com.ridesharing.demo.exceptions.EntityNotFoundException;
 import com.ridesharing.demo.model.Vehicle;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

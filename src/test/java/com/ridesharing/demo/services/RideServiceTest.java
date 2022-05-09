@@ -20,13 +20,12 @@ class RideServiceTest {
     private RideService rideService;
     @Mock private RidesManager ridesManager;
     @Mock private UsersManager usersManager;
-    @Mock private VehiclesManager vehiclesManager;
     @Mock private GeneralUtils generalUtils;
     @Mock private BonusUtils bonusUtils;
 
     @BeforeEach
     void setup(){
-        rideService = new RideService(ridesManager,usersManager,vehiclesManager,generalUtils,bonusUtils);
+        rideService = new RideService(ridesManager,usersManager,generalUtils,bonusUtils);
     }
 
     @Test

@@ -72,6 +72,15 @@ public class RidesManager {
         return validRideswithMinSeats;
     }
 
+    public ArrayList<Ride> getAllAvailableRides(){
+        ArrayList<Ride>validRides = new ArrayList<>();
+        for(Ride ride: getAllRidesList()){
+            if(ride.getStatus().equals(TripStatus.NOT_STARTED)){
+                validRides.add(ride);
+            }
+        }
+        return validRides;
+    }
 
     public List<Ride> getRides(String source, String destination, Integer seats){
         List<Ride>validRides = new ArrayList<>();

@@ -17,12 +17,22 @@ public class BonusUtils {
     HashMap<String,ArrayList<String>>map = new HashMap<>();
     HashMap<String, Integer> cityLinks = new HashMap<>();
 
-
+    /**
+     * create links b/w two rides
+     * @param src
+     * @param destination
+     */
     private void addEdge(String src, String destination)
     {
         map.get(src).add(destination);
     }
 
+    /**
+     * check whether two cities are already linked or not
+     * @param src
+     * @param dest
+     * @return
+     */
     public Boolean isCitiesAlreadyLinked(String src, String dest){
         ArrayList<String>connectedCities = map.get(src);
         for(String city : connectedCities){
@@ -33,6 +43,10 @@ public class BonusUtils {
         return false;
     }
 
+    /**
+     * create map of given cities links
+     * @param minSeats
+     */
     public void createMap(int minSeats){
         List<Ride>listOfValidRides = ridesManager.getAllRidesListWithAvailableSeats(minSeats);
         for(Ride listOfValidRide : listOfValidRides){
@@ -48,6 +62,11 @@ public class BonusUtils {
         }
     }
 
+    /**
+     * get the list of unique cities in database
+     * @param listOfValidRides
+     * @return
+     */
     public ArrayList<String> uniqueCities(List<Ride>listOfValidRides){
         ArrayList<String>uniqueList = new ArrayList<>();
         for (Ride listOfValidRide : listOfValidRides) {
@@ -61,6 +80,7 @@ public class BonusUtils {
         return uniqueList;
     }
 
+    // helper function - unique city
     public boolean isUniqueCity(String city, ArrayList<String>arr){
         for (String s : arr) {
             if (Objects.equals(s, city)) {
@@ -70,12 +90,20 @@ public class BonusUtils {
         return true;
     }
 
+    // helper function - print an ArrayList
     public void printArrayList(ArrayList<String>arr){
         for(String s: arr){
             System.out.println(s);
         }
     }
 
+    /**
+     * get the shortest possible routes with available seats for disconnected rides
+     * @param source
+     * @param destination
+     * @param pred
+     * @return
+     */
     public boolean BFS(String source, String destination, String pred[]){
         LinkedList<String>queue = new LinkedList<>();
 
@@ -108,9 +136,16 @@ public class BonusUtils {
         return false;
     }
 
+    /**
+     * return the list of all disconnected rides b/w given source and destination
+     * @param source
+     * @param destination
+     * @param minSeats
+     * @return
+     */
     public ArrayList<Ride> getRoute(String source, String destination, int minSeats){
         createMap(minSeats);
-        String pred[] = new String[map.size()];
+        String[] pred = new String[map.size()];
 
         if(!BFS(source, destination, pred)){
             log.error("no disconnected route present b/w source and destination");
@@ -125,7 +160,7 @@ public class BonusUtils {
         }
 //        System.out.println("=========== printing path =============");
 //        printArrayList(path);
-        ArrayList<Ride>listOfAllRides = ridesManager.getAllRidesList();
+        ArrayList<Ride>listOfAllRides = ridesManager.getAllAvailableRides();
         ArrayList<Ride>rides = new ArrayList<>();
         for(int i=path.size()-1;i>0;i--){
             String src = path.get(i);
@@ -140,7 +175,6 @@ public class BonusUtils {
                 }
             }
         }
-        System.out.println("Size of Disconnected rides: "+rides.size());
         return rides;
     }
 

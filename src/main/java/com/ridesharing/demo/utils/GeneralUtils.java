@@ -21,6 +21,7 @@ public class GeneralUtils {
     @Autowired
     private VehiclesManager vehiclesManager;
 
+    // helper function - check whether user already exists in db or not
     public Boolean isUserExists(String userName){
         List<User> users = usersManager.getAllUsers();
         for(User user : users){
@@ -31,6 +32,7 @@ public class GeneralUtils {
         return false;
     }
 
+    // helper function - check whether vehicle already present in db or not
     public Boolean isVehicleExists(String registrationNumber){
         List<Vehicle> vehicles = vehiclesManager.getAllVehicles();
         for(Vehicle vehicle : vehicles){
@@ -41,6 +43,7 @@ public class GeneralUtils {
         return false;
     }
 
+    // helper function - check whether vehicle belong to user who is offering the ride or not
     public Boolean isVehicleBelongsToUser(OfferingRequestDto offeringRequestDto){
         List<Vehicle> vehicles = vehiclesManager.getAllVehicles();
         for(Vehicle vehicle : vehicles){
